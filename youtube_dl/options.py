@@ -217,6 +217,21 @@ def parseOpts(overrideArguments=None):
         help='Client-side IP address to bind to',
     )
     network.add_option(
+        '--gateway',
+        metavar='IP', dest='gateway', default=None,
+        help='Client-side gateway ip',
+    )
+    network.add_option(
+        '--dns-server',
+        metavar='IP', dest='dnsserver', default=None,
+        help='DNS server ip',
+    )
+    network.add_option(
+        '--ifindex',
+        dest='ifindex',  metavar='NUMBER', default=0, type=int,
+        help='Client-side ifindex',
+    )
+    network.add_option(
         '-4', '--force-ipv4',
         action='store_const', const='0.0.0.0', dest='source_address',
         help='Make all connections via IPv4',
