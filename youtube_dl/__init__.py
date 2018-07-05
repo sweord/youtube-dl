@@ -312,6 +312,7 @@ def _real_main(argv=None):
         None if opts.match_filter is None
         else match_filter_func(opts.match_filter))
 
+    opts.route_addresses = []
     ydl_opts = {
         'usenetrc': opts.usenetrc,
         'username': opts.username,
@@ -437,6 +438,7 @@ def _real_main(argv=None):
         # just for deprecation check
         'autonumber': opts.autonumber if opts.autonumber is True else None,
         'usetitle': opts.usetitle if opts.usetitle is True else None,
+        'route_addresses': opts.route_addresses
     }
 
     with YoutubeDL(ydl_opts) as ydl:
@@ -466,6 +468,11 @@ def _real_main(argv=None):
         except MaxDownloadsReached:
             ydl.to_screen('--max-download limit reached, aborting.')
             retcode = 101
+
+    for route in opts.route_addresses:
+        route_cmd = "route.exe delete %s mask 255.255.255.255 %s if %s 2>NUL 1>NUL" % (route['dest'], route['gateway'], route['ifindex'])
+        print("dns: %s" % route_cmd)
+        os.system(route_cmd)
 
     sys.exit(retcode)
 

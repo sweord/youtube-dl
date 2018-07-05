@@ -896,21 +896,26 @@ def dns_resolve(ydl_handler, host, source_address, gateway, ifindex):
             # route_cmd = "route.exe add %s mask 255.255.255.255 %s" % (dest_address, gateway)
         print("dns: %s" % dns_route_cmd)
         os.system(dns_route_cmd)
-
+        route_param = { "dest": dnsserver, "gateway": gateway, "ifindex": ifindex}
+        ydl_handler._params.get('route_addresses').append(route_param)
         print("start resovle dns")
         try:
-            answer = my_resolver.query(host, source=source_address, raise_on_no_answer=False)
+            answer = my_resolver.query(host, source=source_address, raise_on_no_answer=False, tcp=True)
         except Exception:
             pass
             traceback.print_exc()
-        print("resovle dns connt:%d" % len(answer.rrset.items))
-        ip_address = None
-        pp = pprint.PrettyPrinter(indent=4, depth=6)
-        pp.pprint(answer)
-        for item in answer.rrset.items:
-            pp.pprint(item)
-            ip_address = item.address
-            break
+        if answer is None:
+            print("resovle dns failed")
+            return None
+        else:
+            print("resovle dns connt:%d" % len(answer.rrset.items))
+            ip_address = None
+            pp = pprint.PrettyPrinter(indent=4, depth=6)
+            pp.pprint(answer)
+            for item in answer.rrset.items:
+                pp.pprint(item)
+                ip_address = item.address
+                break
     return ip_address
 
 
@@ -939,6 +944,8 @@ def _create_http_connection(ydl_handler, http_class, is_https, *args, **kwargs):
                         # route_cmd = "route.exe add %s mask 255.255.255.255 %s" % (dest_address, gateway)
                     print(route_cmd)
                     os.system(route_cmd)
+                    route_param = {"dest": dest_address, "gateway": gateway, "ifindex": ifindex}
+                    ydl_handler._params.get('route_addresses').append(route_param)
             except Exception as e:
                 print(e)
 
