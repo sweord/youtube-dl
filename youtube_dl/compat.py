@@ -2793,12 +2793,14 @@ except NameError:  # Python 3
     compat_integer_types = (int, )
 
 
-if sys.version_info < (2, 7):
+# if sys.version_info < (2, 7):
+if True:
     def compat_socket_create_connection(address, timeout, source_address=None):
         host, port = address
         err = None
         for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
             af, socktype, proto, canonname, sa = res
+            print("http host:%s client:%s" % (sa[0], host))
             sock = None
             try:
                 sock = socket.socket(af, socktype, proto)

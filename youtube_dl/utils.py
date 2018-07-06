@@ -390,7 +390,6 @@ def get_elements_by_attribute(attribute, value, html, escape_value=True):
 
 class HTMLAttributeParser(compat_HTMLParser):
     """Trivial HTML parser to gather the attributes for a single element"""
-
     def __init__(self):
         self.attrs = {}
         compat_HTMLParser.__init__(self)
@@ -489,7 +488,6 @@ def sanitize_filename(s, restricted=False, is_id=False):
     Set is_id if this is not an arbitrary string, but an ID that should be kept
     if possible.
     """
-
     def replace_insane(char):
         if restricted and char in ACCENT_CHARS:
             return ACCENT_CHARS[char]
@@ -656,6 +654,7 @@ def encodeFilename(s, for_subprocess=False):
 
 
 def decodeFilename(b, for_subprocess=False):
+
     if sys.version_info >= (3, 0):
         return b
 
@@ -785,7 +784,6 @@ class GeoRestrictedError(ExtractorError):
     This exception may be thrown when a video is not available from your
     geographic location due to geographic restrictions imposed by a website.
     """
-
     def __init__(self, msg, countries=None):
         super(GeoRestrictedError, self).__init__(msg, expected=True)
         self.msg = msg
@@ -879,11 +877,13 @@ class XAttrUnavailableError(YoutubeDLError):
 
 
 def dns_resolve(ydl_handler, host, source_address, gateway, ifindex):
+    ret = []
     dnsserver = ydl_handler._params.get('dnsserver')
+    print("start dns resolve host: %s" % host)
     if dnsserver is None:
-        print("start normal resovle dns")
         ip_address = socket.gethostbyname(host)
         print("resovle dns: %s" % ip_address)
+        ret.append(ip_address)
     else:
         my_resolver = dns.resolver.Resolver()
         my_resolver.nameservers = [dnsserver]
@@ -915,8 +915,11 @@ def dns_resolve(ydl_handler, host, source_address, gateway, ifindex):
             for item in answer.rrset.items:
                 pp.pprint(item)
                 ip_address = item.address
-                break
-    return ip_address
+                ret.append(ip_address)
+                # update = dns.update.Update(host)
+                # update.replace('a', 3600, dns.rdatatype.A, ip_address)
+                # break;
+    return ret
 
 
 def _create_http_connection(ydl_handler, http_class, is_https, *args, **kwargs):
@@ -932,9 +935,11 @@ def _create_http_connection(ydl_handler, http_class, is_https, *args, **kwargs):
     if source_address is not None:
         if hc.host is not None and gateway is not None:
             try:
-                dest_address = dns_resolve(ydl_handler, hc.host, source_address, gateway, ifindex)
-                print("dest ip: %s" % dest_address)
-                if dest_address is not None:
+                dest_addresses = dns_resolve(ydl_handler, hc.host, source_address, gateway, ifindex)
+                if not dest_addresses:
+                    print("dest ip: none")
+                for dest_address in dest_addresses:
+                    print("dest ip: %s" % dest_address)
                     if ifindex != 0:
                         route_cmd = "route.exe add %s mask 255.255.255.255 %s if %s 2>NUL 1>NUL" % (
                         dest_address, gateway, ifindex)
@@ -950,7 +955,8 @@ def _create_http_connection(ydl_handler, http_class, is_https, *args, **kwargs):
                 print(e)
 
         sa = (source_address, 0)
-        if hasattr(hc, 'source_address'):  # Python 2.7+
+        # if hasattr(hc, 'source_address'):  # Python 2.7+
+        if False:
             hc.source_address = sa
         else:  # Python 2.6
             def _hc_connect(self, *args, **kwargs):
@@ -962,7 +968,6 @@ def _create_http_connection(ydl_handler, http_class, is_https, *args, **kwargs):
                         ssl_version=ssl.PROTOCOL_TLSv1)
                 else:
                     self.sock = sock
-
             hc.connect = functools.partial(_hc_connect, hc)
 
     return hc
@@ -1427,8 +1432,7 @@ def _windows_write_string(s, out):
         ctypes.wintypes.LPVOID)(('WriteConsoleW', ctypes.windll.kernel32))
     written = ctypes.wintypes.DWORD(0)
 
-    GetFileType = compat_ctypes_WINFUNCTYPE(ctypes.wintypes.DWORD, ctypes.wintypes.DWORD)(
-        ('GetFileType', ctypes.windll.kernel32))
+    GetFileType = compat_ctypes_WINFUNCTYPE(ctypes.wintypes.DWORD, ctypes.wintypes.DWORD)(('GetFileType', ctypes.windll.kernel32))
     FILE_TYPE_CHAR = 0x0002
     FILE_TYPE_REMOTE = 0x8000
     GetConsoleMode = compat_ctypes_WINFUNCTYPE(
@@ -1510,7 +1514,6 @@ if sys.platform == 'win32':
     import ctypes.wintypes
     import msvcrt
 
-
     class OVERLAPPED(ctypes.Structure):
         _fields_ = [
             ('Internal', ctypes.wintypes.LPVOID),
@@ -1520,30 +1523,28 @@ if sys.platform == 'win32':
             ('hEvent', ctypes.wintypes.HANDLE),
         ]
 
-
     kernel32 = ctypes.windll.kernel32
     LockFileEx = kernel32.LockFileEx
     LockFileEx.argtypes = [
-        ctypes.wintypes.HANDLE,  # hFile
-        ctypes.wintypes.DWORD,  # dwFlags
-        ctypes.wintypes.DWORD,  # dwReserved
-        ctypes.wintypes.DWORD,  # nNumberOfBytesToLockLow
-        ctypes.wintypes.DWORD,  # nNumberOfBytesToLockHigh
+        ctypes.wintypes.HANDLE,     # hFile
+        ctypes.wintypes.DWORD,      # dwFlags
+        ctypes.wintypes.DWORD,      # dwReserved
+        ctypes.wintypes.DWORD,      # nNumberOfBytesToLockLow
+        ctypes.wintypes.DWORD,      # nNumberOfBytesToLockHigh
         ctypes.POINTER(OVERLAPPED)  # Overlapped
     ]
     LockFileEx.restype = ctypes.wintypes.BOOL
     UnlockFileEx = kernel32.UnlockFileEx
     UnlockFileEx.argtypes = [
-        ctypes.wintypes.HANDLE,  # hFile
-        ctypes.wintypes.DWORD,  # dwReserved
-        ctypes.wintypes.DWORD,  # nNumberOfBytesToLockLow
-        ctypes.wintypes.DWORD,  # nNumberOfBytesToLockHigh
+        ctypes.wintypes.HANDLE,     # hFile
+        ctypes.wintypes.DWORD,      # dwReserved
+        ctypes.wintypes.DWORD,      # nNumberOfBytesToLockLow
+        ctypes.wintypes.DWORD,      # nNumberOfBytesToLockHigh
         ctypes.POINTER(OVERLAPPED)  # Overlapped
     ]
     UnlockFileEx.restype = ctypes.wintypes.BOOL
     whole_low = 0xffffffff
     whole_high = 0x7fffffff
-
 
     def _lock_file(f, exclusive):
         overlapped = OVERLAPPED()
@@ -1555,7 +1556,6 @@ if sys.platform == 'win32':
         if not LockFileEx(handle, 0x2 if exclusive else 0x0, 0,
                           whole_low, whole_high, f._lock_file_overlapped_p):
             raise OSError('Locking file failed: %r' % ctypes.FormatError())
-
 
     def _unlock_file(f):
         assert f._lock_file_overlapped_p
@@ -1569,20 +1569,16 @@ else:
     try:
         import fcntl
 
-
         def _lock_file(f, exclusive):
             fcntl.flock(f, fcntl.LOCK_EX if exclusive else fcntl.LOCK_SH)
-
 
         def _unlock_file(f):
             fcntl.flock(f, fcntl.LOCK_UN)
     except ImportError:
         UNSUPPORTED_MSG = 'file locking is not supported on this platform'
 
-
         def _lock_file(f, exclusive):
             raise IOError(UNSUPPORTED_MSG)
-
 
         def _unlock_file(f):
             raise IOError(UNSUPPORTED_MSG)
@@ -1859,7 +1855,7 @@ def remove_end(s, end):
 def remove_quotes(s):
     if s is None or len(s) < 2:
         return s
-    for quote in ('"', "'",):
+    for quote in ('"', "'", ):
         if s[0] == quote and s[-1] == quote:
             return s[1:-1]
     return s
@@ -1949,8 +1945,7 @@ def parse_duration(s):
     s = s.strip()
 
     days, hours, mins, secs, ms = [None] * 5
-    m = re.match(
-        r'(?:(?:(?:(?P<days>[0-9]+):)?(?P<hours>[0-9]+):)?(?P<mins>[0-9]+):)?(?P<secs>[0-9]+)(?P<ms>\.[0-9]+)?Z?$', s)
+    m = re.match(r'(?:(?:(?:(?P<days>[0-9]+):)?(?P<hours>[0-9]+):)?(?P<mins>[0-9]+):)?(?P<secs>[0-9]+)(?P<ms>\.[0-9]+)?Z?$', s)
     if m:
         days, hours, mins, secs, ms = m.groups()
     else:
@@ -2311,8 +2306,8 @@ def merge_dicts(*dicts):
                 continue
             if (k not in merged or
                     (isinstance(v, compat_str) and v and
-                     isinstance(merged[k], compat_str) and
-                     not merged[k])):
+                        isinstance(merged[k], compat_str) and
+                        not merged[k])):
                 merged[k] = v
     return merged
 
@@ -2328,6 +2323,7 @@ US_RATINGS = {
     'R': 16,
     'NC': 18,
 }
+
 
 TV_PARENTAL_GUIDELINES = {
     'TV-Y': 0,
@@ -2408,13 +2404,11 @@ def js_to_json(code):
 
 def qualities(quality_ids):
     """ Get a numeric quality value out of a list of possible values """
-
     def q(qid):
         try:
             return quality_ids.index(qid)
         except ValueError:
             return -1
-
     return q
 
 
@@ -2640,12 +2634,12 @@ def _match_one(filter_part, dct):
         op = COMPARISON_OPERATORS[m.group('op')]
         actual_value = dct.get(m.group('key'))
         if (m.group('quotedstrval') is not None or
-                m.group('strval') is not None or
-                # If the original field is a string and matching comparisonvalue is
-                # a number we should respect the origin of the original field
-                # and process comparison value as a string (see
-                # https://github.com/rg3/youtube-dl/issues/11082).
-                actual_value is not None and m.group('intval') is not None and
+            m.group('strval') is not None or
+            # If the original field is a string and matching comparisonvalue is
+            # a number we should respect the origin of the original field
+            # and process comparison value as a string (see
+            # https://github.com/rg3/youtube-dl/issues/11082).
+            actual_value is not None and m.group('intval') is not None and
                 isinstance(actual_value, compat_str)):
             if m.group('op') not in ('=', '!='):
                 raise ValueError(
@@ -2700,7 +2694,6 @@ def match_filter_func(filter_str):
         else:
             video_title = info_dict.get('title', info_dict.get('id', 'video'))
             return '%s does not pass filter %s, skipping ..' % (video_title, filter_str)
-
     return _match_func
 
 
@@ -3640,7 +3633,7 @@ class PerRequestProxyHandler(compat_urllib_request.ProxyHandler):
         for type in ('http', 'https'):
             setattr(self, '%s_open' % type,
                     lambda r, proxy='__noproxy__', type=type, meth=self.proxy_open:
-                    meth(r, proxy, type))
+                        meth(r, proxy, type))
         return compat_urllib_request.ProxyHandler.__init__(self, proxies)
 
     def proxy_open(self, req, proxy, type):

@@ -470,22 +470,32 @@ def _real_main(argv=None):
             retcode = 101
 
     for route in opts.route_addresses:
-        route_cmd = "route.exe delete %s mask 255.255.255.255 %s if %s 2>NUL 1>NUL" % (route['dest'], route['gateway'], route['ifindex'])
-        print("dns: %s" % route_cmd)
-        os.system(route_cmd)
+        print(route['dest'])
+        #route_cmd = "route.exe delete %s mask 255.255.255.255 %s if %s 2>NUL 1>NUL" % (route['dest'], route['gateway'], route['ifindex'])
+        #print("dns: %s" % route_cmd)
+        #os.system(route_cmd)
 
     sys.exit(retcode)
 
 
+import traceback
+import http
+
 def main(argv=None):
     try:
+        http.client.HTTPConnection.debuglevel = 1
         _real_main(argv)
     except DownloadError:
         sys.exit(1)
+        traceback.print_exc()
     except SameFileError:
         sys.exit('ERROR: fixed output name but more than one file to download')
+        traceback.print_exc()
     except KeyboardInterrupt:
         sys.exit('\nERROR: Interrupted by user')
+        traceback.print_exc()
+    except Exception:
+        traceback.print_exc()
 
 
 __all__ = ['main', 'YoutubeDL', 'gen_extractors', 'list_extractors']
