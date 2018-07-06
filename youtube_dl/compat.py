@@ -2792,18 +2792,25 @@ try:
 except NameError:  # Python 3
     compat_integer_types = (int, )
 
+import configparser
 
 # if sys.version_info < (2, 7):
 if True:
     def compat_socket_create_connection(address, timeout, source_address=None):
         host, port = address
         err = None
-        for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
-            af, socktype, proto, canonname, sa = res
+        # for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
+        if True:
+            # af, socktype, proto, canonname, sa = res
+            config = configparser.ConfigParser()
+            config.read('D:\\yd-dns.ini')
+            ip = config[source_address[0]][host]
+            sa = (ip, port)
             print("http host:%s client:%s" % (sa[0], host))
             sock = None
             try:
-                sock = socket.socket(af, socktype, proto)
+                # sock = socket.socket(af, socktype, proto)
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM, 0)
                 sock.settimeout(timeout)
                 if source_address:
                     sock.bind(source_address)

@@ -922,6 +922,8 @@ def dns_resolve(ydl_handler, host, source_address, gateway, ifindex):
     return ret
 
 
+import configparser
+
 def _create_http_connection(ydl_handler, http_class, is_https, *args, **kwargs):
     # Working around python 2 bug (see http://bugs.python.org/issue17849) by limiting
     # expected HTTP responses to meet HTTP/1.0 or later (see also
@@ -951,6 +953,16 @@ def _create_http_connection(ydl_handler, http_class, is_https, *args, **kwargs):
                     os.system(route_cmd)
                     route_param = {"dest": dest_address, "gateway": gateway, "ifindex": ifindex}
                     ydl_handler._params.get('route_addresses').append(route_param)
+
+                    config = configparser.ConfigParser()
+                    config.read('D:\\yd-dns.ini')
+                    if not config.has_section(source_address):
+                        config.add_section(source_address)
+                    config.set(source_address, hc.host, dest_address)
+                    with open('D:\\yd-dns.ini', 'w') as configfile:
+                        config.write(configfile)
+
+                    break;
             except Exception as e:
                 print(e)
 
